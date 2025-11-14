@@ -1,11 +1,12 @@
-import { signInWithEmail } from "@/src/utils/auth/signIn";
-import { SignInFormData, signInSchema, SignUpFormData } from "@/src/utils/auth/validation";
+import { useAuthStore } from "@/src/state/Auth";
+import { SignInFormData, signInSchema } from "@/src/utils/auth/validation";
 import { router } from "expo-router";
 import { Controller, useForm } from "react-hook-form";
 import { StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function LogIn() {
+    const { signIn } = useAuthStore();
 
     const {
         control,
@@ -17,24 +18,22 @@ export default function LogIn() {
     });
 
     const onSubmit = async (data: SignInFormData) => {
-        // This login is basically the same shit like the sign up screen, but modified for the log in component
-
         const result = signInSchema.safeParse(data)
 
         if (!result.success) {
             result.error.errors.forEach((err) => {
-                const fieldName = err.path[0] as keyof SignUpFormData;
+                const fieldName = err.path[0] as keyof SignInFormData;
                 setError(fieldName, { message: err.message });
             })
             return;
         }
 
         try {
-            await signInWithEmail(data.email, data.password);
-            return router.replace("/Account/Account")
+            await signIn(data.email, data.password);
+            router.replace("/Account/Account")
         } catch (error) {
-            console.log("A wierd error occured while logging you into your account", error)
-            setError("email", { message: "Something wierd went wrong"})
+            console.log("An error occurred while logging you into your account", error)
+            setError("email", { message: "Invalid email or password"})
         }
     };
 
@@ -82,7 +81,7 @@ export default function LogIn() {
                     onPress={handleSubmit(onSubmit)}
                     disabled={isSubmitting}
                 >
-                    <Text style={{ color: "#fff", fontWeight: "600" }}>Sign Up</Text>
+                    <Text style={{ color: "#fff", fontWeight: "600" }}>Log In</Text>
                 </TouchableOpacity>
             </View>
         </SafeAreaView>

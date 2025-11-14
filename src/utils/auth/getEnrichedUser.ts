@@ -1,16 +1,21 @@
 import supabase from "../supabase";
 
 export async function getEnrichedUser(userId: string): Promise<any> {
+    // Changed from "users" to "profiles" to match your signup table
     const { data, error } = await supabase
         .from("users")
         .select("*")
         .eq("id", userId)
         .single()
 
-    if (error) throw error
+    if (error) {
+        console.log("Error fetching profile:", error)
+        return null
+    }
     
-    if (!data || data.length === 0) {
-        console.log("Not any corresponding enriched user yet")
+    if (!data) {
+        console.log("No corresponding profile found yet")
+        return null
     }
 
     return data

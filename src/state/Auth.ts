@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import type { Session, User } from '@supabase/supabase-js'
 import { create } from 'zustand'
-import { persist } from 'zustand/middleware'
+import { createJSONStorage, persist } from 'zustand/middleware'
 import { getEnrichedUser } from '../utils/auth/getEnrichedUser'
 import { getSession } from '../utils/auth/getSession'
 import { signInWithEmail } from '../utils/auth/signIn'
@@ -18,8 +18,6 @@ export type Profile = {
 export type AppUser = User & {
   profile?: Profile
 }
-
-
 
 type AuthState = {
   user: AppUser | null
@@ -46,22 +44,27 @@ export const useAuthStore = create<AuthState>()(
           set({ loading: true })
           const session = await getSession()
 
-          let enrichedUser = undefined
-          if (session) {
-            const profileData = await getEnrichedUser(session.user.id)
-            enrichedUser = {
-              ...session.user,
-              profile: profileData,
-            }
+          if (!session) {
+            set({ user: null, session: null, loading: false })
+            return
           }
 
-          set({
-            user: enrichedUser ?? null,
-            session: session ?? null,
-            loading: false,
-          })
+          // Fetch profile data
+          try {
+            const profileData = await getEnrichedUser(session.user.id)
+            const enrichedUser: AppUser = {
+              ...session.user,
+              profile: profileData || undefined,
+            }
+            set({ user: enrichedUser, session, loading: false })
+          } catch (profileError) {
+            console.log("Could not fetch profile, using basic user data:", profileError)
+            // Still set the user even if profile fetch fails
+            set({ user: session.user, session, loading: false })
+          }
         } catch (err: any) {
-          set({ error: err.message, loading: false })
+          console.error("Initialize error:", err)
+          set({ error: err.message, loading: false, user: null, session: null })
         }
       },
 
@@ -69,9 +72,28 @@ export const useAuthStore = create<AuthState>()(
         try {
           set({ loading: true, error: null })
           const { user, session } = await signUpWithEmail(email, password)
-          set({ user, session, loading: false })
+          
+          if (!user) {
+            throw new Error("User not created")
+          }
+
+          // Fetch profile data if user exists
+          try {
+            const profileData = await getEnrichedUser(user.id)
+            const enrichedUser: AppUser = {
+              ...user,
+              profile: profileData || undefined,
+            }
+            set({ user: enrichedUser, session, loading: false })
+          } catch (profileError) {
+            console.log("Could not fetch profile after signup:", profileError)
+            // Still set the user even if profile fetch fails
+            set({ user, session, loading: false })
+          }
         } catch (err: any) {
+          console.error("SignUp error:", err)
           set({ error: err.message, loading: false })
+          throw err
         }
       },
 
@@ -79,9 +101,28 @@ export const useAuthStore = create<AuthState>()(
         try {
           set({ loading: true, error: null })
           const { user, session } = await signInWithEmail(email, password)
-          set({ user, session, loading: false })
+          
+          if (!user) {
+            throw new Error("Login failed")
+          }
+
+          // Fetch profile data if user exists
+          try {
+            const profileData = await getEnrichedUser(user.id)
+            const enrichedUser: AppUser = {
+              ...user,
+              profile: profileData || undefined,
+            }
+            set({ user: enrichedUser, session, loading: false })
+          } catch (profileError) {
+            console.log("Could not fetch profile after login:", profileError)
+            // Still set the user even if profile fetch fails
+            set({ user, session, loading: false })
+          }
         } catch (err: any) {
+          console.error("SignIn error:", err)
           set({ error: err.message, loading: false })
+          throw err
         }
       },
 
@@ -89,15 +130,17 @@ export const useAuthStore = create<AuthState>()(
         try {
           set({ loading: true })
           await signOutUser()
-          set({ user: null, session: null, loading: false })
+          set({ user: null, session: null, loading: false, error: null })
         } catch (err: any) {
+          console.error("SignOut error:", err)
           set({ error: err.message, loading: false })
+          throw err
         }
       },
     }),
     {
       name: 'auth-storage',
-      storage: () => AsyncStorage,
+      storage: createJSONStorage(() => AsyncStorage),
     }
   )
 )

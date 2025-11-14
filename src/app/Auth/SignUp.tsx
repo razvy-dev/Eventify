@@ -1,10 +1,13 @@
-import { signUpWithEmail } from "@/src/utils/auth/signUp"
+import { useAuthStore } from "@/src/state/Auth"
 import { SignUpFormData, signUpSchema } from "@/src/utils/auth/validation"
+import { router } from "expo-router"
 import { Controller, useForm } from "react-hook-form"
 import { StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
 
 export default function SignUp() {
+    const { signUp } = useAuthStore();
+
     const {
         control,
         handleSubmit,
@@ -29,10 +32,12 @@ export default function SignUp() {
 
         // ✅ Proceed with sign up if validation passes
         try {
-            await signUpWithEmail(data.email, data.password);
+            await signUp(data.email, data.password);
+            // Navigate to confirmation page or account
+            router.replace("/Auth/ConfirmEmail");
         } catch (error) {
-            console.log("A weird error occurred while creating your account: ", error);
-            setError("email", { message: "Something weird went wrong" });
+            console.log("An error occurred while creating your account: ", error);
+            setError("email", { message: "Could not create account. Email may already be in use." });
         }
     };
 

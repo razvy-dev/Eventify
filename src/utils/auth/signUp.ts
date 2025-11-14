@@ -24,7 +24,7 @@ export async function signUpWithEmail(
 
   // 2️⃣ Insert a profile row with optional profile_picture
   const { error: profileError } = await supabase
-    .from("profiles")
+    .from("users")
     .insert([
       {
         id: userId, // link profile row to auth user

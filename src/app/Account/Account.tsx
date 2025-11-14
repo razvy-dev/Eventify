@@ -1,8 +1,8 @@
-import { useAuthStore } from "@/src/state/Auth"
 import { signOutUser } from "@/src/utils/auth/signOut"
 import { Redirect, router } from "expo-router"
 import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
+import { useAuthStore } from "../../state/Auth"
 
 export default function Account() {
   const { user, session, loading } = useAuthStore()
