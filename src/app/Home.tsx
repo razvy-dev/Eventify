@@ -12,6 +12,9 @@ export default function Home() {
                 <Link href={{ pathname: "/Auth/SignUp" }}>
                     Sign Up
                 </Link>
+                <Link href={{ pathname: "/Account/Account"}}>
+                    Account
+                </Link>
             </View>
         </SafeAreaView>
     )
