@@ -2,7 +2,7 @@ import { Feather } from "@expo/vector-icons";
 import { useState } from "react";
 import { Image, Share, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
-export default function PostCard({ event }: { event: typeof feedEvents[0] }) {
+export default function PostCard({ event }: { event: any }) {
   const [isFavorite, setIsFavorite] = useState(false);
 
   const handleShare = async () => {
