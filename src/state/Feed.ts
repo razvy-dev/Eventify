@@ -30,7 +30,7 @@ export const useFeedStore = create<FeedStore>((set, get) => ({
         }
     },
 
-    getNextEvent: async (city: string) => {
+    getNextEvent: async (city: string, ) => {
         console.log("message")
     }
 }))
