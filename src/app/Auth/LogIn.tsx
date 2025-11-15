@@ -36,6 +36,14 @@ export default function LogIn() {
             setError("email", { message: "Invalid email or password"})
         }
     };
+    
+    // --- ADDED: Navigation Handler for Forgot Password ---
+    const handleForgotPassword = () => {
+        // This navigates to the new ForgotPasswordScreen (assuming it is
+        // located at the route path /ForgotPassword in your Expo Router setup).
+        router.push("/Auth/ForgotPassword"); 
+    };
+    // ----------------------------------------------------
 
     return (
         <SafeAreaView style={styles.container}>
@@ -75,6 +83,17 @@ export default function LogIn() {
                     )}
                 />
                 {errors.password && <Text style={styles.errorText}>{errors.password.message}</Text>}
+                
+                {/* --- ADDED: Forgot Password Button --- */}
+                <TouchableOpacity
+                    style={styles.forgotLink}
+                    onPress={handleForgotPassword}
+                    // Disable if the user is currently trying to log in
+                    disabled={isSubmitting} 
+                >
+                    <Text style={styles.forgotText}>Forgot Password?</Text>
+                </TouchableOpacity>
+                {/* ------------------------------------- */}
 
                 <TouchableOpacity
                     style={[styles.submitButton, isSubmitting && { opacity: 0.5 }]}
@@ -126,4 +145,15 @@ const styles = StyleSheet.create({
     errorBorder: {
         borderColor: 'red',
     },
+    // --- ADDED: Styles for the Forgot Password link ---
+    forgotLink: {
+        alignSelf: 'flex-end', // Pushes the link to the right of the container
+        marginTop: 8,
+    },
+    forgotText: {
+        color: '#A3F', // Uses your submit button's accent color for visibility
+        fontSize: 14,
+        fontWeight: "500",
+    },
+    // --------------------------------------------------
 })
