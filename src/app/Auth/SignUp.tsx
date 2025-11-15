@@ -1,9 +1,48 @@
 import { useAuthStore } from "@/src/state/Auth"
 import { SignUpFormData, signUpSchema } from "@/src/utils/auth/validation"
+import colors from "@/src/utils/other/colors"
 import { router } from "expo-router"
 import { Controller, useForm } from "react-hook-form"
-import { StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native"
+import { Dimensions, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
+// import AuthVectorBackground from "../../components/icons/AuthVectorBackground"
+import AuthBackButton from "../../components/wrappers/AuthBackButton"
+
+const { width } = Dimensions.get('window');
+
+// **TYPE FIX: Extend the base form data for fields not yet included in Zod schema**
+type FullSignUpFormData = SignUpFormData & { 
+    full_name: string; 
+    role: 'User' | 'Organizer'; 
+};
+
+// --- Custom Input Component to handle the line style ---
+interface LineInputProps {
+    label: string;
+    placeholder: string;
+    error?: any; 
+    onChangeText: (text: string) => void;
+    onBlur: () => void;
+    value: string;
+    secureTextEntry?: boolean;
+    keyboardType?: 'email-address' | 'default' | 'numeric' | 'phone-pad';
+    autoCapitalize?: 'none' | 'sentences' | 'words' | 'characters';
+}
+
+const LineInput: React.FC<LineInputProps> = ({ label, placeholder, error, ...props }) => (
+    <View style={styles.inputWrapper}>
+        {/* FIX: Moved label to inline flow, then adjust margin/padding if needed */}
+        <Text style={styles.inputLabel}>{label}</Text> 
+        <TextInput
+            placeholder={placeholder}
+            placeholderTextColor={colors.black} // Used black for visibility on light background
+            style={styles.textInput}
+            {...props}
+        />
+        <View style={[styles.inputLine, error && styles.errorLine]} />
+    </View>
+);
+// --------------------------------------------------------
 
 export default function SignUp() {
     const { signUp } = useAuthStore();
@@ -13,16 +52,14 @@ export default function SignUp() {
         handleSubmit,
         setError,
         formState: { errors, isSubmitting },
-    } = useForm<SignUpFormData>({
-        defaultValues: { email: '', password: '', confirmPassword: '' },
+    } = useForm<FullSignUpFormData>({
+        defaultValues: { full_name: '', email: '', password: '', confirmPassword: '', role: 'User' },
     });
 
-    const onSubmit = async (data: SignUpFormData) => {
-        // ✅ Validate user input with Zod
-        const result = signUpSchema.safeParse(data);
+    const onSubmit = async (data: FullSignUpFormData) => {
+        const result = signUpSchema.safeParse(data); 
 
         if (!result.success) {
-            // Map Zod errors to React Hook Form errors
             result.error.errors.forEach((err) => {
                 const fieldName = err.path[0] as keyof SignUpFormData;
                 setError(fieldName, { message: err.message });
@@ -30,11 +67,9 @@ export default function SignUp() {
             return;
         }
 
-        // ✅ Proceed with sign up if validation passes
         try {
             await signUp(data.email, data.password);
-            // Navigate to confirmation page or account
-            router.replace("/Auth/ConfirmEmail");
+            router.replace("/Auth/SelectLocation");
         } catch (error) {
             console.log("An error occurred while creating your account: ", error);
             setError("email", { message: "Could not create account. Email may already be in use." });
@@ -42,112 +77,277 @@ export default function SignUp() {
     };
 
     return (
-        <SafeAreaView style={styles.container}>
-            <View>
-                <Text style={styles.title}>Create an Account</Text>
+        // FIX: Main view uses flex: 1 and space-between to avoid scrolling
+        <View style={styles.fullScreen}>
+            
+            {/* 1. Background Layer (Placeholder View for your SVG/Vector) */}
+            <View style={styles.backgroundVectorPlaceholder} />
 
-                {/* Email Field */}
-                <Controller
-                    control={control}
-                    name="email"
-                    render={({ field: { onChange, onBlur, value } }) => (
-                        <TextInput
-                            placeholder="Email"
-                            autoCapitalize="none"
-                            keyboardType="email-address"
-                            onBlur={onBlur}
-                            onChangeText={onChange}
-                            value={value}
-                            style={[styles.textInput, errors.email && styles.errorBorder]}
+            {/* Content Wrapper for Header + Form Content to push the button down */}
+            <SafeAreaView style={styles.contentWrapper}>
+                
+                <View>
+                    {/* 2. Header and Back Button */}
+                    <View style={styles.headerContainer}>
+                        <AuthBackButton onPress={router.back} />
+                        {/* FIX: Reduced margin on titleWrapper */}
+                        <View style={styles.titleWrapper}>
+                            <Text style={styles.title}>Create new account</Text>
+                        </View>
+                    </View>
+
+
+                    {/* 3. Form Content */}
+                    <View style={styles.formContent}>
+                        
+                        {/* Full Name Field */}
+                        <Controller
+                            control={control}
+                            name="full_name"
+                            render={({ field: { onChange, onBlur, value } }) => (
+                                <LineInput
+                                    label="Full name"
+                                    placeholder="Enter your name"
+                                    onBlur={onBlur}
+                                    onChangeText={onChange}
+                                    value={value}
+                                    error={errors.full_name}
+                                    keyboardType="default"
+                                    autoCapitalize="words"
+                                />
+                            )}
                         />
-                    )}
-                />
-                {errors.email && <Text style={styles.errorText}>{errors.email.message}</Text>}
+                        {errors.full_name && <Text style={styles.errorText}>{errors.full_name.message}</Text>}
 
-                {/* Password Field */}
-                <Controller
-                    control={control}
-                    name="password"
-                    render={({ field: { onChange, onBlur, value } }) => (
-                        <TextInput
-                            placeholder="Password"
-                            secureTextEntry
-                            onBlur={onBlur}
-                            onChangeText={onChange}
-                            value={value}
-                            style={[styles.textInput, errors.password && styles.errorBorder]}
+                        {/* Email Field */}
+                        <Controller
+                            control={control}
+                            name="email"
+                            render={({ field: { onChange, onBlur, value } }) => (
+                                <LineInput
+                                    label="Email adress"
+                                    placeholder="name@example.com"
+                                    autoCapitalize="none"
+                                    keyboardType="email-address"
+                                    onBlur={onBlur}
+                                    onChangeText={onChange}
+                                    value={value}
+                                    error={errors.email}
+                                />
+                            )}
                         />
-                    )}
-                />
-                {errors.password && <Text style={styles.errorText}>{errors.password.message}</Text>}
+                        {errors.email && <Text style={styles.errorText}>{errors.email.message}</Text>}
 
-                {/* Confirm Password Field */}
-                <Controller
-                    control={control}
-                    name="confirmPassword"
-                    render={({ field: { onChange, onBlur, value } }) => (
-                        <TextInput
-                            placeholder="Confirm Password"
-                            secureTextEntry
-                            onBlur={onBlur}
-                            onChangeText={onChange}
-                            value={value}
-                            style={[styles.textInput, errors.confirmPassword && styles.errorBorder]}
+                        {/* Create Password Field */}
+                        <Controller
+                            control={control}
+                            name="password"
+                            render={({ field: { onChange, onBlur, value } }) => (
+                                <LineInput
+                                    label="Create password"
+                                    placeholder="Enter your password"
+                                    secureTextEntry
+                                    onBlur={onBlur}
+                                    onChangeText={onChange}
+                                    value={value}
+                                    error={errors.password}
+                                    keyboardType="default"
+                                />
+                            )}
                         />
-                    )}
-                />
-                {errors.confirmPassword && (
-                    <Text style={styles.errorText}>{errors.confirmPassword.message}</Text>
-                )}
+                        {errors.password && <Text style={styles.errorText}>{errors.password.message}</Text>}
 
-                <TouchableOpacity
-                    style={[styles.submitButton, isSubmitting && { opacity: 0.5 }]}
-                    onPress={handleSubmit(onSubmit)}
-                    disabled={isSubmitting}
-                >
-                    <Text style={{ color: "#fff", fontWeight: "600" }}>Sign Up</Text>
-                </TouchableOpacity>
-            </View>
-        </SafeAreaView>
+                        {/* Confirm Password Field */}
+                        <Controller
+                            control={control}
+                            name="confirmPassword"
+                            render={({ field: { onChange, onBlur, value } }) => (
+                                <LineInput
+                                    label="Confirm password"
+                                    placeholder="Confirm new password"
+                                    secureTextEntry
+                                    onBlur={onBlur}
+                                    onChangeText={onChange}
+                                    value={value}
+                                    error={errors.confirmPassword}
+                                    keyboardType="default"
+                                />
+                            )}
+                        />
+                        {errors.confirmPassword && (
+                            <Text style={styles.errorText}>{errors.confirmPassword.message}</Text>
+                        )}
+
+                        {/* Role Selection (Organizer | User) */}
+                        <Controller
+                            control={control}
+                            name="role"
+                            render={({ field: { onChange, value } }) => (
+                                <View style={styles.roleContainer}>
+                                    {/* Organizer Button */}
+                                    <TouchableOpacity
+                                        style={[
+                                            styles.roleButton, 
+                                            value === 'Organizer' && styles.roleButtonActive
+                                        ]}
+                                        onPress={() => onChange('Organizer')}
+                                    >
+                                        <Text style={value === 'Organizer' ? styles.roleButtonTextActive : styles.roleButtonTextInactive}>Organizer</Text>
+                                    </TouchableOpacity>
+
+                                    {/* User Button */}
+                                    <TouchableOpacity
+                                        style={[
+                                            styles.roleButton, 
+                                            value === 'User' && styles.roleButtonActive
+                                        ]}
+                                        onPress={() => onChange('User')}
+                                    >
+                                        <Text style={value === 'User' ? styles.roleButtonTextActive : styles.roleButtonTextInactive}>User</Text>
+                                    </TouchableOpacity>
+                                </View>
+                            )}
+                        />
+                    </View>
+                </View>
+                
+                {/* 4. Submit Button */}
+                <View style={styles.submitButtonContainer}>
+                    <TouchableOpacity
+                        style={[styles.submitButton, isSubmitting && { opacity: 0.7 }]}
+                        onPress={handleSubmit(onSubmit)}
+                        disabled={isSubmitting}
+                    >
+                        <Text style={styles.submitButtonText}>Sign up</Text>
+                    </TouchableOpacity>
+                </View>
+            </SafeAreaView>
+        </View>
     );
 }
 
 const styles = StyleSheet.create({
-    container: {
-        backgroundColor: '#000',
+    fullScreen: {
         flex: 1,
-        flexDirection: "column",
-        padding: 20,
-        gap: 14,
-        justifyContent: 'center',
+        backgroundColor: colors.white, 
+    },
+    backgroundVectorPlaceholder: {
+        ...StyleSheet.absoluteFillObject,
+        backgroundColor: '#e8e8e8', 
+        zIndex: 0,
+    },
+    // FIX: Wrapper to manage vertical layout flow (Header/Form Content area + Button area)
+    contentWrapper: {
+        flex: 1,
+        justifyContent: 'space-between',
+        paddingHorizontal: 15,
+    },
+    
+    // --- Header Styling ---
+    // FIX: Removed unnecessary absolute positioning and padding.
+    headerContainer: {
+        paddingTop: 10, // Small top padding under the safe area
+    },
+    titleWrapper: {
+        marginTop: 15, // Reduced space after back button to be tighter
+        paddingLeft: 10,
+        marginBottom: 20, // Space below title before form starts
     },
     title: {
-        color: "#ccc",
-        fontSize: 22,
-        fontWeight: "600",
-        marginBottom: 10,
-        textAlign: "center",
+        color: colors.black,
+        fontSize: 28,
+        fontWeight: "bold",
+        textAlign: "left",
+    },
+    // --- Form Styling ---
+    // FIX: Removed absolute positioning, now flows naturally below the title
+    formContent: {
+        width: width * 0.85,
+        alignSelf: 'center',
+        gap: 25, // Slightly reduced spacing between input groups to be more compact
+        zIndex: 1, 
+        // Note: Content is intentionally not positioned at the top of the screen, 
+        // it starts below the header/title in the normal flow.
+    },
+    inputWrapper: {
+        marginBottom: 0,
+    },
+    // FIX: Removed 'position: absolute' from inputLabel as it was unnecessary here
+    inputLabel: {
+        fontSize: 14,
+        color: colors.black,
+        marginBottom: -5, // Pull label closer to input text
     },
     textInput: {
-        borderWidth: 1,
-        borderColor: '#ccc',
-        padding: 12,
-        borderRadius: 8,
-        color: '#fff',
+        backgroundColor: 'transparent',
+        paddingHorizontal: 0,
+        paddingVertical: 5, // Reduced vertical padding
+        color: colors.black, 
+        fontSize: 18,
+    },
+    inputLine: {
+        height: 1,
+        backgroundColor: colors.black, 
+        marginTop: 0,
+    },
+    errorLine: {
+        backgroundColor: colors.grena,
+    },
+    // --- Role Selection Styles ---
+    roleContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'flex-end', 
+        gap: 10, 
+        paddingTop: 5, // Reduced top padding
+        marginBottom: 10,
+    },
+    roleButton: {
+        width: width * 0.25, 
+        backgroundColor: '#D9D9D9', 
+        height: 40,
+        borderRadius: 5,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    roleButtonActive: {
+        backgroundColor: '#444444', 
+    },
+    roleButtonTextActive: {
+        color: colors.white, 
+        fontWeight: '600',
+    },
+    roleButtonTextInactive: {
+        color: colors.black, 
+        fontWeight: '600',
+    },
+    // --- Submit Button Container and Styles ---
+    // FIX: Removed absolute positioning, now flows to the bottom of the flex container
+    submitButtonContainer: {
+        // Aligned with the form content width
+        alignSelf: 'center',
+        width: width * 0.85, 
+        paddingBottom: 20, // Space above the bottom edge of the safe area
+        backgroundColor: 'transparent',
     },
     submitButton: {
-        backgroundColor: '#A3F',
+        backgroundColor: '#900021', 
         borderRadius: 8,
-        paddingVertical: 14,
+        paddingVertical: 18,
         alignItems: "center",
-        marginTop: 20,
+        width: '100%',
     },
+    submitButtonText: {
+        color: colors.white,
+        fontSize: 18,
+        fontWeight: "bold",
+    },
+    // --- Error Styling ---
     errorText: {
-        color: 'red',
-        fontSize: 14,
-        marginTop: -6,
-    },
-    errorBorder: {
-        borderColor: 'red',
+        color: colors.grena,
+        fontSize: 12,
+        // FIX: Adjusted margin to be closer to the input line
+        marginTop: 2, 
+        marginLeft: 5,
     },
 });

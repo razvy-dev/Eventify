@@ -4,6 +4,7 @@ import { create } from 'zustand'
 import { createJSONStorage, persist } from 'zustand/middleware'
 import { getEnrichedUser } from '../utils/auth/getEnrichedUser'
 import { getSession } from '../utils/auth/getSession'
+import { setCity } from '../utils/auth/setCity'
 import { signInWithEmail } from '../utils/auth/signIn'
 import { signOutUser } from '../utils/auth/signOut'
 import { signUpWithEmail } from '../utils/auth/signUp'
@@ -12,7 +13,7 @@ export type Profile = {
   firstName?: string
   lastName?: string
   profile_picture?: string
-  // add any other fields from your profiles table
+  city: string
 }
 
 export type AppUser = User & {
@@ -29,6 +30,7 @@ type AuthState = {
   signUp: (email: string, password: string) => Promise<void>
   signIn: (email: string, password: string) => Promise<void>
   signOut: () => Promise<void>
+  setCity: (city: string) => Promise<void>
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -137,6 +139,32 @@ export const useAuthStore = create<AuthState>()(
           throw err
         }
       },
+
+      setCity: async (newCity: string) => {
+        try {
+          set({ loading: true, error: null });
+
+          const user = useAuthStore.getState().user;
+          if (!user) throw new Error("No logged-in user found.");
+
+          // Call your API function with userId + city
+          const { succes, city } = await setCity(user.id, newCity);
+
+          if (!succes) {
+            throw new Error("Failed to update city in Supabase");
+          }
+
+          // Update user object in Zustand
+          set((state) => ({
+            loading: false,
+            user: state.user ? { ...state.user, city: city } : null,
+          }));
+        } catch (error: any) {
+          console.log("There was a state error while uploading the city: ", error);
+          set({ loading: false, error });
+        }
+      }
+
     }),
     {
       name: 'auth-storage',
