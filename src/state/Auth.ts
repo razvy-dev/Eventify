@@ -54,6 +54,7 @@ export const useAuthStore = create<AuthState>()(
           // Fetch profile data
           try {
             const profileData = await getEnrichedUser(session.user.id)
+            console.log("profile: ", profileData)
             const enrichedUser: AppUser = {
               ...session.user,
               profile: profileData || undefined,

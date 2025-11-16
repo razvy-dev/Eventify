@@ -1,14 +1,15 @@
-import { StyleSheet, Text, View } from "react-native";
+import { router } from 'expo-router';
+import { StyleSheet, Text, TouchableOpacity } from "react-native";
 import PostCard from "./PostCard";
 
 export default function EventFeed({ feedEvents }: any) {
   return (
-    <View style={styles.feedContainer}>
+    <TouchableOpacity style={styles.feedContainer} onPress={() => router.push("/")} >
       <Text style={styles.sectionTitle}>Upcoming Events</Text>
       {feedEvents.map((event: any) => (
         <PostCard key={event.id} event={event} />
       ))}
-    </View>
+    </TouchableOpacity>
   );
 }
 

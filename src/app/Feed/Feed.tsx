@@ -1,7 +1,9 @@
 // App.tsx
-import EventFeed from '@/src/components/feed/EventFeed';
-import FeaturedCarousel from '@/src/components/feed/FeaturedCarousel';
-import React from 'react';
+import EventFeed from '@/src/components/events/EventFeed';
+import FeaturedCarousel from '@/src/components/events/FeaturedCarousel';
+import { useAuthStore } from '@/src/state/Auth';
+import { useFeedStore } from '@/src/state/Feed';
+import React, { useEffect, useState } from 'react';
 import {
   Platform,
   ScrollView,
@@ -9,7 +11,7 @@ import {
   StyleSheet,
   View
 } from 'react-native';
-import LocationSelector from '../../components/feed/LocationSelector';
+import LocationSelector from '../../components/events/LocationSelector';
 
 // Featured events for the carousel (hottest events)
 const featuredEvents = [
@@ -39,32 +41,30 @@ const featuredEvents = [
   },
 ];
 
-// Feed events
-const feedEvents = [
-  {
-    id: 4,
-    title: "The Kooks",
-    date: "Thu, Apr 19 · 20.00 Pm",
-    location: "Razzmatazz",
-    image: "https://images.unsplash.com/photo-1540039155733-5bb30b53aa14?w=400",
-  },
-  {
-    id: 5,
-    title: "The Wombats",
-    date: "Fri, Apr 22 · 21.00 Pm",
-    location: "Sala Apolo",
-    image: "https://images.unsplash.com/photo-1533174072545-7a4b6ad7a6c3?w=400",
-  },
-  {
-    id: 6,
-    title: "Foster The People",
-    date: "Mon, Apr 25 · 17.30",
-    location: "La Monumental",
-    image: "https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?w=400",
-  },
-];
-
 export default function Feed() {
+  const [feedEvents, setEvents] = useState([])
+  const { user } = useAuthStore()
+  console.log(user)
+  // CORRECT: returns an object containing the function and the variable
+const fetchInitialPosts = useFeedStore((s) => s.fetchInitialPosts);
+const displayedPosts = useFeedStore((s) => s.displayedPosts);
+const userCity = useAuthStore((s) => s.user?.city);
+
+useEffect(() => {
+  const city = "Bucharest";
+  
+  const fetchEvents = async (currentCity: string) => {
+    const newEvents = await fetchInitialPosts(currentCity); 
+    
+    if (Array.isArray(newEvents)) {
+      setEvents(newEvents);
+      console.log(newEvents)
+    }
+  };
+
+  fetchEvents("city: ", city);
+}, [userCity, fetchInitialPosts]);
+
   return (
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" />

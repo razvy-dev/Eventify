@@ -66,7 +66,6 @@ export const useEventsStore = create<EventsState>()(
 
             if (success) {
                 console.log("The event was deleted succesfully. ")
-
             }
 
             set((state) => ({

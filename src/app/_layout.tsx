@@ -1,11 +1,23 @@
 // app/_layout.tsx
 import { Feather } from '@expo/vector-icons';
 import { Stack, router } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Platform, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { useAuthStore } from '../state/Auth';
 
 export default function RootLayout() {
   const [selectedScreen, setSelectedScreen] = useState("home")
+  const { user } = useAuthStore();
+
+  useEffect(() => {
+    setTimeout(() => {
+      if (user) {
+        router.push("/Feed/Feed")
+      } else {
+        router.push("/Home")
+      }
+    })
+  })
 
   return (
     <>
@@ -51,6 +63,7 @@ const styles = StyleSheet.create({
     paddingBottom: Platform.OS === 'ios' ? 32 : 16,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
+    marginBottom: 40,
   },
   navButton: {
     padding: 4,

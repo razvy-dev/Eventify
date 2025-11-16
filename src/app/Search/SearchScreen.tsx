@@ -1,4 +1,4 @@
-import EventFeed from "@/src/components/feed/EventFeed";
+import EventFeed from "@/src/components/events/EventFeed";
 import FilterWrapper from "@/src/components/wrappers/FilterWrapper";
 import { ScrollView, StyleSheet } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";

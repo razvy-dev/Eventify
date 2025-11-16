@@ -3,7 +3,7 @@ import supabase from "../supabase";
 export default async function getFeed(city: string) {
     try {
         const { data, error } = await supabase
-            .from("feed")
+            .from("events")
             .select("*")
             .eq("city", city)
             .order("created_at", { ascending: false } )
