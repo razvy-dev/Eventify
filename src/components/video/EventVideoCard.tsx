@@ -1,36 +1,35 @@
 import { Ionicons } from "@expo/vector-icons";
-import * as Audio from "expo-audio";
+import { setAudioModeAsync } from "expo-audio";
 import { VideoView, useVideoPlayer } from "expo-video";
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { Text, TouchableOpacity, View } from "react-native";
 
-export default function EventVideoCard({ item }: { item: any }) {
-  // Create video player
-  const player = useVideoPlayer(item.video, (playerInstance) => {
-    playerInstance.loop = true;
-    playerInstance.play();
+export default function EventVideoCard({ item }: any) {
+  const source = useMemo(() => ({ uri: item.video_url }), [item.video_url]);
+
+  // OLD API — setup callback
+  const player = useVideoPlayer(source, (player) => {
+    player.loop = true;
+    player.play();
   });
 
   useEffect(() => {
-    // Enable audio even in silent mode
-    Audio.setAudioModeAsync({
+    setAudioModeAsync({
       playsInSilentModeIOS: true,
-      allowsRecordingIOS: false,
       staysActiveInBackground: false,
+      allowsRecordingIOS: false,
     });
   }, []);
 
   return (
     <View style={{ flex: 1 }}>
-      {/* Fullscreen Video */}
       <VideoView
         style={{ width: "100%", height: "100%" }}
         player={player}
-        allowsFullscreen
         contentFit="cover"
+        allowsFullscreen
       />
 
-      {/* Floating Action Buttons */}
       <View
         style={{
           position: "absolute",
@@ -46,7 +45,6 @@ export default function EventVideoCard({ item }: { item: any }) {
         <FloatingIcon icon="share-social-outline" />
       </View>
 
-      {/* Going Button */}
       <TouchableOpacity
         style={{
           position: "absolute",

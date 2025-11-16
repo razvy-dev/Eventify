@@ -12,6 +12,7 @@ import {
   View
 } from 'react-native';
 import LocationSelector from '../../components/events/LocationSelector';
+import supabase from '../../utils/supabase';
 
 // Featured events for the carousel (hottest events)
 const featuredEvents = [
@@ -45,25 +46,36 @@ export default function Feed() {
   const [feedEvents, setEvents] = useState([])
   const { user } = useAuthStore()
   console.log(user)
-  // CORRECT: returns an object containing the function and the variable
-const fetchInitialPosts = useFeedStore((s) => s.fetchInitialPosts);
-const displayedPosts = useFeedStore((s) => s.displayedPosts);
-const userCity = useAuthStore((s) => s.user?.city);
-
-useEffect(() => {
-  const city = "Bucharest";
   
-  const fetchEvents = async (currentCity: string) => {
-    const newEvents = await fetchInitialPosts(currentCity); 
-    
-    if (Array.isArray(newEvents)) {
-      setEvents(newEvents);
-      console.log(newEvents)
-    }
-  };
+  // CORRECT: returns an object containing the function and the variable
+  const fetchInitialPosts = useFeedStore((s) => s.fetchInitialPosts);
+  const displayedPosts = useFeedStore((s) => s.displayedPosts);
+  const userCity = useAuthStore((s) => s.user?.city);
 
-  fetchEvents("city: ", city);
-}, [userCity, fetchInitialPosts]);
+  useEffect(() => {
+    const city = "Bucharest";
+    
+    const fetchEvents = async (currentCity: string) => {
+      const { data: newEvents, error } = await supabase
+        .from("events")
+        .select("*")
+        .eq("city", "Bucharest")
+        .order("created_at", { ascending: false })
+        .limit(20)
+      
+      if (error) {
+        console.error("Error fetching events:", error);
+        return;
+      }
+      
+      if (newEvents) {
+        setEvents(newEvents);
+        console.log("Fetched events:", newEvents);
+      }
+    };
+
+    fetchEvents(city);
+  }, []);
 
   return (
     <View style={styles.container}>
