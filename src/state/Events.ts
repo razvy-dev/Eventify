@@ -29,7 +29,7 @@ export const useEventsStore = create<EventsState>()(
                 console.log("Something went wrong from supabase when trying to get owned events for this user.")
             }
 
-            set({ ownedEvents: data, loading: false })
+            set({ ownedEvents: data, loading: false, error: null })
         } catch (error: any) {
             console.log("Something worked wrong when getting your events from the database: ", error);
             set({ loading: false, error: error})

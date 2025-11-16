@@ -11,15 +11,15 @@ export async function getOwnedEvents(userId: string) {
         const { data, error } = await supabase
             .from("events")
             .select("*")
-            .eq("user_id", userId)
-            .order("created_at", { ascending: true })
+            .eq("organizer_id", userId)
+            .order("created_at", { ascending: false })
 
         if (error) {
             console.log("There was an error while reading owned events: ", error)
             throw error;
         }
 
-        return { succes: true, data }
+        return { succes: true, data: data }
     } catch (err: any) {
         console.error("Error getting owned events: ", err);
         throw err
